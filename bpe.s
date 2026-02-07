@@ -9,6 +9,15 @@
     newline_end:
     newline_length = newline_end - newline
 
+    comma_char:
+        .asciz ","
+
+    space_char:
+        .asciz " "
+
+    zero_str:
+        .asciz "0"
+
     placeholder_og_msg:
         .asciz "Original message: "
     placeholder_og_msg_end:
@@ -73,6 +82,10 @@ _start:
 
     # bpe loop
     jal ra, bpe
+
+
+    # print pair freq table
+    jal ra, print_pair_frequency_table
 
 
     # exit
@@ -247,6 +260,110 @@ print_newline:
 
     ret
 
+print_char:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd a0, 0(sp)
+
+    sb a0, 0(sp)
+
+    li a7, 64
+    li a0, 1
+    mv a1, sp
+    li a2, 1
+    ecall
+    
+    ld ra, 8(sp)
+    addi sp, sp, 16
+
+    ret
+
+print_comma:
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, comma_char
+    li a2, 1
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+print_space:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, space_char
+    li a2, 1
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+print_num:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+
+    mv s0, a0
+
+    bnez s0, convert_number
+
+    la a1, zero_str
+    li a2, 64
+    jal ra, print_string
+
+    j print_num_done
+
+convert_number:
+    mv s1, sp
+    li s2, 0
+
+convert_number_loop:
+    beqz s0, print_digits
+
+    li t1, 10
+    remu t0, s0, t1
+    divu s0, s0, t1
+    
+    # la t1, zero_str
+    addi t0, t0, '0'
+
+    addi s1, s1, -1
+    sb t0, 0(s1)
+    addi s2, s2, 1
+
+    j convert_number_loop
+
+print_digits:
+    beqz s2, print_num_done
+
+    lb a0, 0(s1)
+    jal ra, print_char
+
+    addi s1, s1, 1
+    addi s2, s2, -1
+
+    j print_digits
+
+print_num_done:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+
+    ret
+
 copy_string:
 
     beqz a2, copy_string_done
@@ -264,6 +381,61 @@ copy_loop:
     bnez a2, copy_loop
 
 copy_string_done:
+
+    ret
+
+print_pair_frequency_table:
+
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+
+    la s0, pair_frequency_table
+    li t0, 0
+
+print_pair_frequency_table_loop:
+
+    li t1, 256
+    bge t0, t1, print_pair_frequency_table_done
+
+    mv t2, t0
+    li t3, 3
+    mul t2, t2, t3
+    add t2, s0, t2
+    
+    lb t3, 2(t2)
+    beqz t3, next_pair_frequency_table_entry
+
+    lb a0, 0(t2)
+    jal ra, print_char
+
+    jal ra, print_comma
+
+    jal ra, print_space
+
+    lb a0, 1(t2)
+    jal ra, print_char
+
+    jal ra, print_comma
+    
+    jal ra, print_space
+
+    lb a0, 2(t2)
+    jal ra, print_num
+
+    jal ra, print_newline
+
+next_pair_frequency_table_entry:
+
+    addi t0, t0, 1
+
+    j print_pair_frequency_table_loop
+
+print_pair_frequency_table_done:
+
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
 
     ret
 
