@@ -72,7 +72,7 @@ _start:
 
 
     # bpe loop
-    jal ra, bpe   
+    jal ra, bpe
 
 
     # exit
@@ -101,6 +101,7 @@ bpe_done:
     ret
 
 count_pairs:
+
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
@@ -112,13 +113,15 @@ count_pairs:
 
     la a0, pair_frequency_table
     li a1, 768
-    jal ra, clear_memory
+    jal ra, clear_memory # f(freq table ptr, freq table size)
 
-    blt s1, 2, count_pairs_done
+    li t0, 2
+    blt s1, t0, count_pairs_done
 
-    li s2, 0
+    li s2, 0 # loooping idx
 
 count_pairs_loop:
+
     addi t0, s1, -1
     bge s2, t0, count_pairs_done
 
@@ -126,19 +129,99 @@ count_pairs_loop:
     lb a0, 0(t1)
     lb a1, 1(t1)
 
-    jal ra, increment_pair_count
+    jal ra, increment_pair_count # f(first byte, second byte)
 
     addi s2, s2, 1
 
     j count_pairs_loop
 
 count_pairs_done:
+
     ld ra, 24(sp)
     ld s0, 16(sp)
     ld s1, 8(sp)
     ld s2, 0(sp)
     addi sp, sp, 32
 
+    ret
+
+clear_memory:
+
+    beqz a1, clear_done
+
+    sb zero, 0(a0)
+
+    addi a0, a0, 1
+    addi a1, a1, -1
+
+    j clear_memory
+
+clear_done:
+
+    ret
+
+increment_pair_count:
+
+    addi sp, sp, -16
+    sd s0, 8(sp)
+    sd s1, 0(sp)
+
+    mv s0, a0
+    mv s1, a1
+
+    la t0, pair_frequency_table
+    li t1, 0
+
+search_corresponding_pair:
+
+    li t2, 256
+    bge t1, t2, add_new_pair
+
+    mv t3, t1
+    li t4, 3
+    mul t3, t3, t4 # entry address: entry => byte 1 byte 2 count
+    add t3, t0, t3
+
+    lb t4, 2(t3)
+    beqz t4, add_at_index
+
+    lb t5, 0(t3)
+    lb t6, 1(t3)
+
+    bne t5, s0, next_pair
+    bne t6, s1, next_pair
+
+    addi t4, t4, 1
+    sb t4, 2(t3)
+
+    j increment_done
+
+next_pair:
+
+    addi t1, t1, 1
+
+    j search_corresponding_pair
+
+add_at_index:
+
+    mv t3, t1
+    li t4, 3
+    mul t3, t3, t4
+    add t3, t0, t3
+    
+add_new_pair:
+
+    sb s0, 0(t3)
+    sb s1, 1(t3)
+    li t4, 1
+    sb t4, 2(t3)
+
+increment_done:
+
+    ld s0, 8(sp)
+    ld s1, 0(sp)
+    addi sp, sp, 16
+    
     ret
 
 print_string:
