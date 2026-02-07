@@ -22,6 +22,12 @@
     work_buffer:
         .zero 64
 
+    translation_table:
+        .zero 48
+
+    pair_frequency_table:
+        .zero 768
+
 .text
 .global _start
 
@@ -65,12 +71,78 @@ _start:
     li s5, 4
 
 
+    # bpe loop
+    jal ra, bpe   
+
+
     # exit
     li a7, 93
     li a0, 0
     ecall
 
+bpe:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    beqz s5, bpe_done
+
+bpe_loop:
+
+    mv a0, s3
+    mv a1, s0
+    jal count_pairs # f(buffer ptr, buffer len)
+
+bpe_done:
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+count_pairs:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+
+    mv s0, a0
+    mv s1, a1
+
+    la a0, pair_frequency_table
+    li a1, 768
+    jal ra, clear_memory
+
+    blt s1, 2, count_pairs_done
+
+    li s2, 0
+
+count_pairs_loop:
+    addi t0, s1, -1
+    bge s2, t0, count_pairs_done
+
+    add t1, s0, s2
+    lb a0, 0(t1)
+    lb a1, 1(t1)
+
+    jal ra, increment_pair_count
+
+    addi s2, s2, 1
+
+    j count_pairs_loop
+
+count_pairs_done:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+
+    ret
+
 print_string:
+
     li a7, 64
     li a0, 1
     ecall
@@ -97,6 +169,7 @@ copy_string:
     beqz a2, copy_string_done
 
 copy_loop:
+
     lb t0, 0(a0)
     sb t0, 0(a1)
 
