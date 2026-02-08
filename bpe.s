@@ -106,6 +106,12 @@ bpe_loop:
     mv a1, s0
     jal count_pairs # f(buffer ptr, buffer len)
 
+
+    jal ra, find_most_frequent_pairs
+
+    li t0, 2
+    blt a2, t0, bpe_done
+
 bpe_done:
 
     ld ra, 0(sp)
@@ -261,6 +267,7 @@ print_newline:
     ret
 
 print_char:
+
     addi sp, sp, -16
     sd ra, 8(sp)
     sd a0, 0(sp)
@@ -279,6 +286,7 @@ print_char:
     ret
 
 print_comma:
+
     addi sp, sp, -8
     sd ra, 0(sp)
 
@@ -308,6 +316,7 @@ print_space:
     ret
 
 print_num:
+
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
@@ -325,10 +334,12 @@ print_num:
     j print_num_done
 
 convert_number:
+
     mv s1, sp
     li s2, 0
 
 convert_number_loop:
+
     beqz s0, print_digits
 
     li t1, 10
@@ -345,6 +356,7 @@ convert_number_loop:
     j convert_number_loop
 
 print_digits:
+
     beqz s2, print_num_done
 
     lb a0, 0(s1)
@@ -356,6 +368,7 @@ print_digits:
     j print_digits
 
 print_num_done:
+
     ld ra, 24(sp)
     ld s0, 16(sp)
     ld s1, 8(sp)
@@ -436,6 +449,48 @@ print_pair_frequency_table_done:
     ld ra, 8(sp)
     ld s0, 0(sp)
     addi sp, sp, 16
+
+    ret
+
+find_most_frequent_pairs:
+
+    # idx, max count, byte 1 and byte 2
+    la t0, pair_frequency_table
+    li t1, 0
+    li t2, 0
+    li t3, 0
+    li t4, 0
+
+find_most_frequent_pairs_loop:
+
+    li t5, 256
+    bge t1, t5, find_most_frequent_pairs_done
+
+    mv t6, t1
+    li a0, 3
+    mul t6, t6, a0
+    add t6, t0, t6
+
+    lb a0, 2(t6)
+    beqz a0, find_most_frequent_pairs_next
+
+    ble a0, t2, find_most_frequent_pairs_next
+
+    mv t2, a0
+    lb t3, 0(t6)
+    lb t4, 1(t6)
+
+find_most_frequent_pairs_next:
+    
+    addi t1, t1, 1
+
+    j find_most_frequent_pairs_loop
+
+find_most_frequent_pairs_done:
+
+    mv a0, t3
+    mv a1, t4
+    mv a2, t2
 
     ret
 
