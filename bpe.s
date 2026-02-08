@@ -571,19 +571,20 @@ copy_string_done:
 
 print_pair_frequency_table:
 
-    addi sp, sp, -16
-    sd ra, 8(sp)
-    sd s0, 0(sp)
+    addi sp, sp, -24
+    sd ra, 16(sp)
+    sd s0, 8(sp)
+    sd s1, 0(sp)
 
     la s0, pair_frequency_table
-    li t0, 0
+    li s1, 0
 
 print_pair_frequency_table_loop:
 
-    li t1, 16
-    bge t0, t1, print_pair_frequency_table_done
+    li t1, 256
+    bge s1, t1, print_pair_frequency_table_done
 
-    mv t2, t0
+    mv t2, s1
     li t3, 3
     mul t2, t2, t3
     add t2, s0, t2
@@ -612,15 +613,16 @@ print_pair_frequency_table_loop:
 
 next_pair_frequency_table_entry:
 
-    addi t0, t0, 1
+    addi s1, s1, 1
 
     j print_pair_frequency_table_loop
 
 print_pair_frequency_table_done:
 
-    ld ra, 8(sp)
-    ld s0, 0(sp)
-    addi sp, sp, 16
+    ld ra, 16(sp)
+    ld s0, 8(sp)
+    ld s1, 0(sp)
+    addi sp, sp, 24
 
     ret
 
