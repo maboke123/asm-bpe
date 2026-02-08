@@ -1,6 +1,6 @@
 .data
     user_input:
-        .asciz "aabcdefgh"
+        .asciz "aaaabbbbbbbbbcccccccccccccccccdefgh"
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -23,10 +23,20 @@
     placeholder_og_msg_end:
     placeholder_og_msg_length = placeholder_og_msg_end - placeholder_og_msg
 
+    placeholder_new_msg:
+        .asciz "Output message: "
+    placeholder_new_msg_end:
+    placeholder_new_msg_length = placeholder_new_msg_end - placeholder_new_msg
+
     placeholder_buff_msg:
         .asciz "Buffer: "
     placeholder_buff_msg_end:
     placeholder_buff_msg_length = placeholder_buff_msg_end - placeholder_buff_msg
+
+    placeholder_freq_table_msg:
+        .asciz "Frequency table: "
+    placeholder_freq_table_msg_end:
+    placeholder_freq_table_msg_length = placeholder_freq_table_msg_end - placeholder_freq_table_msg
 
     work_buffer:
         .zero 64
@@ -65,7 +75,7 @@ _start:
     jal ra, print_string
 
     la a1, work_buffer
-    li a2, 64
+    li a2, user_input_length
     jal ra, print_string
 
     jal ra, print_newline
@@ -74,10 +84,10 @@ _start:
     # init state
     li s0, user_input_length
     li s1, 0
-    li s2, 0x7B
+    li s2, 0x78
     la s3, work_buffer
     la s4, translation_table
-    li s5, 4
+    li s5, 1
 
 
     # bpe loop
@@ -85,7 +95,25 @@ _start:
 
 
     # print pair freq table
+    la a1, placeholder_freq_table_msg
+    li a2, placeholder_freq_table_msg_length
+    jal ra, print_string
+
+    jal ra, print_newline
+    
     jal ra, print_pair_frequency_table
+
+
+    # print output
+    la a1, placeholder_new_msg
+    li a2, placeholder_new_msg_length
+    jal ra, print_string
+
+    la a1, work_buffer
+    li a2, 64
+    jal ra, print_string
+
+    jal ra, print_newline
 
 
     # exit
@@ -129,6 +157,14 @@ bpe_loop:
     mv a2, s7
     mv a3, s2
     jal ra, add_record_to_translation_table # f(translation table ptr, byte 1, byte 2, replacing byte)
+
+    addi s1, s1, 1
+    addi s2, s2, 1
+    addi s5, s5, -1
+    addi s4, s4, 3
+
+    li t0, 0x100
+    blt s2, t0, bpe_loop
 
 bpe_done:
 
