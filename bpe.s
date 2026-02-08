@@ -1,6 +1,6 @@
 .data
     user_input:
-        .asciz "aaabbbcccaabbcc"
+        .asciz "aaaabbbbbbbb"
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -95,7 +95,7 @@ _start:
     li s2, 0x7B
     la s3, work_buffer
     la s4, translation_table
-    li s5, 4
+    li s5, 1
 
     # bpe loop
     jal ra, bpe
@@ -146,6 +146,8 @@ bpe:
     beqz s5, bpe_done
 
 bpe_loop:
+
+    beqz s5, bpe_done
 
     mv a0, s3
     mv a1, s0
