@@ -1,6 +1,6 @@
 .data
     user_input:
-        .ascii "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" # 256 char max zodat max count nog in 1 byte past
+        .ascii "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" # 256 char max zodat max count nog in 1 byte past
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -15,6 +15,15 @@
     space_char:
         .asciz " "
 
+    open_bracket_char:
+        .asciz "("
+
+    closed_bracket_char:
+        .asciz ")"
+
+    percentage_char:
+        .asciz "%"
+
     zero_str:
         .asciz "0"
 
@@ -25,6 +34,21 @@
         .asciz "=================================="
     spacer_end:
     spacer_length = spacer_end - spacer_str
+
+    bytes_str:
+        .asciz "bytes"
+    bytes_end:
+    bytes_length = bytes_end - bytes_str
+
+    saved_str:
+        .asciz "bytes saved"
+    saved_end:
+    saved_length = saved_end - saved_str
+
+    wasted_str:
+        .asciz "bytes extra overhead"
+    wasted_end:
+    wasted_length = wasted_end - wasted_str
 
     placeholder_og_msg:
         .asciz "Original message: "
@@ -61,6 +85,42 @@
     placeholder_count_msg_end:
     placeholder_count_msg_length = placeholder_count_msg_end - placeholder_count_msg
 
+    placeholder_stats_msg:
+        .asciz "Compression stats: "
+    placeholder_stats_msg_end:
+    placeholder_stats_msg_length = placeholder_stats_msg_end - placeholder_stats_msg
+
+    placeholder_og_size:
+        .asciz "Original size: "
+    placeholder_og_size_end:
+    placeholder_og_size_length = placeholder_og_size_end - placeholder_og_size
+
+    placeholder_new_size:
+        .asciz "Compressed size: "
+    placeholder_new_size_end:
+    placeholder_new_size_length = placeholder_new_size_end - placeholder_new_size
+
+    placeholder_trans_table_entries:
+        .asciz "Translation table entries: "
+    placeholder_trans_table_entries_end:
+    placeholder_trans_table_entries_length = placeholder_trans_table_entries_end - placeholder_trans_table_entries
+
+    placeholder_trans_table_size:
+        .asciz "Total translation table size: "
+    placeholder_trans_table_size_end:
+    placeholder_trans_table_size_length = placeholder_trans_table_size_end - placeholder_trans_table_size
+
+    placeholder_total_compressed_size:
+        .asciz "Total compressed size: "
+    placeholder_total_compressed_size_end:
+    placeholder_total_compressed_size_length = placeholder_total_compressed_size_end - placeholder_total_compressed_size
+
+    placeholder_iterations_msg:
+        .asciz "Iterations: "
+    placeholder_iterations_msg_end:
+    placeholder_iterations_msg_length = placeholder_iterations_msg_end - placeholder_iterations_msg
+
+
     work_buffer:
         .zero 256 # idem aan max user input
 
@@ -74,6 +134,8 @@
 .global _start
 
 _start:
+
+    jal ra, print_spacer
 
     # print user input
     la a1, placeholder_og_msg
@@ -143,6 +205,11 @@ _start:
 
     jal ra, print_newline
 
+    jal ra, print_spacer
+
+    jal ra, print_statistics
+
+    jal ra, print_spacer
 
     # exit
     li a7, 93
@@ -472,6 +539,51 @@ print_space:
 
     ret
 
+print_open_bracket:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, open_bracket_char
+    li a2, 1
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+print_close_bracket:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, closed_bracket_char
+    li a2, 1
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+print_percentage:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, percentage_char
+    li a2, 1
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
 print_arrow:
 
     addi sp, sp, -8
@@ -489,11 +601,11 @@ print_arrow:
 
 print_num:
 
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
 
     mv s0, a0
 
@@ -507,7 +619,7 @@ print_num:
 
 convert_number:
 
-    addi s1, sp, 16
+    addi s1, sp, 32
     li s2, 0
 
 convert_number_loop:
@@ -541,11 +653,11 @@ print_digits:
 
 print_num_done:
 
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    addi sp, sp, 48
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    addi sp, sp, 64
 
     ret
 
@@ -809,6 +921,181 @@ add_record_to_translation_table:
     sb a3, 2(a0)
 
     ret
+
+print_statistics:
+
+    addi sp, sp, -48    
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    sd s4, 0(sp)
+
+    mv s2, s0
+    li s3, user_input_length
+    mv s4, s1
+
+    mv t0, s4
+    li t1, 3
+    mul s1, t0, t1
+
+    add s0, s2, s1
+
+    la a1, placeholder_stats_msg
+    li a2, placeholder_stats_msg_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+    la a1, placeholder_og_size
+    li a2, placeholder_og_size_length
+    jal ra, print_string
+
+    mv a0, s3
+    jal ra, print_num
+    
+    jal ra, print_space
+
+    la a1, bytes_str
+    li a2, bytes_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+
+    la a1, placeholder_new_size
+    li a2, placeholder_new_size_length
+    jal ra, print_string
+
+    mv a0, s2
+    jal ra, print_num
+
+    jal ra, print_space
+
+    la a1, bytes_str
+    li a2, bytes_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+
+    la a1, placeholder_trans_table_entries
+    li a2, placeholder_trans_table_entries_length
+    jal ra, print_string
+
+    mv a0, s4
+    jal ra, print_num
+
+    jal ra, print_newline
+
+
+    la a1, placeholder_trans_table_size
+    li a2, placeholder_trans_table_size_length
+    jal ra, print_string
+    
+    mv a0, s1
+    jal ra, print_num
+
+    jal ra, print_space
+
+    la a1, bytes_str
+    li a2, bytes_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+
+    la a1, placeholder_total_compressed_size
+    li a2, placeholder_total_compressed_size_length
+    jal ra, print_string
+
+    mv a0, s0
+    jal ra, print_num
+
+    jal ra, print_space
+
+    la a1, bytes_str
+    li a2, bytes_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+
+    sub t0, s3, s0
+
+    blt t0, zero, stats_wasted
+
+    mv a0, t0
+    jal ra, print_num
+
+    jal ra, print_space
+
+    la a1, saved_str
+    li a2, saved_length
+    jal ra, print_string
+
+    jal ra, print_space
+
+    jal ra, print_open_bracket
+
+
+    sub a0, s3, s0
+    mv a1, s3
+    jal ra, caclulate_percentage
+
+    jal ra, print_num
+
+    jal ra, print_percentage
+
+    jal ra, print_close_bracket
+
+    jal ra, print_newline
+
+    j stats_done
+
+stats_wasted:
+
+    sub t0, zero, t0
+    mv a0, t0
+    jal ra, print_num
+
+    jal ra, print_space
+
+    la a1, wasted_str
+    li a2, wasted_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+stats_done:
+    la a1, placeholder_iterations_msg
+    li a2, placeholder_iterations_msg_length
+    jal ra, print_string
+
+    mv a0, s4
+    jal ra, print_num
+
+    jal ra, print_newline
+
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    ld s4, 0(sp)
+    addi sp, sp, 48
+
+    ret
+
+caclulate_percentage:
+
+    li t0, 100
+    mul a0, a0, t0
+    divu a0, a0, a1
+
+    ret
+
 
 
 # riscv64-linux-gnu-as bpe.s -o bpe.o
