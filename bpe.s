@@ -328,7 +328,7 @@ print_num:
     bnez s0, convert_number
 
     la a1, zero_str
-    li a2, 64
+    li a2, 1
     jal ra, print_string
 
     j print_num_done
