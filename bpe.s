@@ -127,7 +127,7 @@ _start:
     jal ra, print_string
 
     la a1, work_buffer
-    li a2, s0
+    mv a2, s0
     jal ra, print_string
 
     jal ra, print_newline
