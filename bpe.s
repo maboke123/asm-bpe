@@ -63,6 +63,11 @@
     placeholder_buff_msg_end:
     placeholder_buff_msg_length = placeholder_buff_msg_end - placeholder_buff_msg
 
+    placeholder_tussentijdse_buff_msg:
+        .asciz "Current message: "
+    placeholder_tussentijdse_buff_msg_end:
+    placeholder_tussentijdse_buff_msg_length = placeholder_tussentijdse_buff_msg_end - placeholder_tussentijdse_buff_msg
+
     placeholder_freq_table_msg:
         .asciz "Frequency table: "
     placeholder_freq_table_msg_end:
@@ -379,7 +384,6 @@ bpe_loop:
 
     jal ra, print_newline
 
-
     mv a0, s3
     mv a1, s0
     mv a2, s6
@@ -400,6 +404,16 @@ bpe_loop:
     addi s2, s2, 1
     addi s5, s5, -1
     addi s4, s4, 3
+
+    la a1, placeholder_tussentijdse_buff_msg
+    li a2, placeholder_tussentijdse_buff_msg_length
+    jal ra, print_string
+
+    la a1, work_buffer
+    mv a2, s0
+    jal ra, print_string
+
+    jal ra, print_newline
 
     jal ra, print_spacer
 
