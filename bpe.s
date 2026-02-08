@@ -124,6 +124,12 @@ bpe_loop:
 
     mv s0, a0
 
+    mv a0, s4
+    mv a1, s6
+    mv a2, s7
+    mv a3, s2
+    jal ra, add_record_to_translation_table # f(translation table ptr, byte 1, byte 2, replacing byte)
+
 bpe_done:
 
     ld ra, 0(sp)
@@ -580,6 +586,14 @@ replace_most_frequent_pair_done:
     ld s3, 8(sp)
     ld s4, 0(sp)
     addi sp, sp, 48
+
+    ret
+
+add_record_to_translation_table:
+
+    sb a1, 0(a0)
+    sb a2, 1(a0)
+    sb a3, 2(a0)
 
     ret
 
