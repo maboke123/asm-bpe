@@ -517,7 +517,7 @@ replace_most_frequent_pair:
     addi sp, sp, -48
     sd ra, 40(sp)
     sd s0, 32(sp)
-    sd s1; 24(sp)
+    sd s1, 24(sp)
     sd s2, 16(sp)
     sd s3, 8(sp)
     sd s4, 0(sp)
@@ -560,7 +560,7 @@ replace_most_frequent_pair_no_match:
     sb t4, 0(t6)
     
     addi t1, t1, 1
-    addi t0 t0, 1
+    addi t0, t0, 1
 
     j replace_most_frequent_pair_loop
 
