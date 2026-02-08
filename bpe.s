@@ -1,6 +1,6 @@
 .data
     user_input:
-        .asciz "aaaabbbbbbbbbcccccccccccccccccdefgh"
+        .asciz "aaabbbcccaabbcc"
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -17,6 +17,9 @@
 
     zero_str:
         .asciz "0"
+
+    arrow_str:
+        .asciz "->"
 
     placeholder_og_msg:
         .asciz "Original message: "
@@ -37,6 +40,11 @@
         .asciz "Frequency table: "
     placeholder_freq_table_msg_end:
     placeholder_freq_table_msg_length = placeholder_freq_table_msg_end - placeholder_freq_table_msg
+
+    placeholder_trans_table_msg:
+        .asciz "Translation table: "
+    placeholder_trans_table_msg_end:
+    placeholder_trans_table_msg_length = placeholder_trans_table_msg_end - placeholder_trans_table_msg
 
     work_buffer:
         .zero 64
@@ -87,8 +95,7 @@ _start:
     li s2, 0x78
     la s3, work_buffer
     la s4, translation_table
-    li s5, 1
-
+    li s5, 4
 
     # bpe loop
     jal ra, bpe
@@ -102,6 +109,16 @@ _start:
     jal ra, print_newline
     
     jal ra, print_pair_frequency_table
+
+
+    # print translation table
+    la a1, placeholder_trans_table_msg
+    li a2, placeholder_trans_table_msg_length
+    jal ra, print_string
+
+    jal ra, print_newline
+    
+    jal ra, print_translation_table
 
 
     # print output
@@ -369,6 +386,21 @@ print_space:
 
     ret
 
+print_arrow:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, arrow_str
+    li a2, 2
+
+    jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
 print_num:
 
     addi sp, sp, -32
@@ -462,7 +494,7 @@ print_pair_frequency_table:
 
 print_pair_frequency_table_loop:
 
-    li t1, 256
+    li t1, 16
     bge t0, t1, print_pair_frequency_table_done
 
     mv t2, t0
@@ -499,6 +531,63 @@ next_pair_frequency_table_entry:
     j print_pair_frequency_table_loop
 
 print_pair_frequency_table_done:
+
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
+
+    ret
+
+print_translation_table:
+
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+
+    la s0, translation_table
+    li t0, 0
+
+print_translation_table_loop:
+
+    li t1, 256
+    bge t0, t1, print_translation_table_done
+
+    mv t2, t0
+    li t3, 3
+    mul t2, t2, t3
+    add t2, s0, t2
+    
+    lb t3, 2(t2)
+    beqz t3, print_translation_table_done
+
+    lb a0, 0(t2)
+    jal ra, print_char
+
+    jal ra, print_comma
+
+    jal ra, print_space
+
+    lb a0, 1(t2)
+    jal ra, print_char
+
+    jal ra, print_space
+
+    jal ra, print_arrow
+    
+    jal ra, print_space
+
+    lb a0, 2(t2)
+    jal ra, print_char
+
+    jal ra, print_newline
+
+next_translation_table_entry:
+
+    addi t0, t0, 1
+
+    j print_translation_table_loop
+
+print_translation_table_done:
 
     ld ra, 8(sp)
     ld s0, 0(sp)
