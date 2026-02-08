@@ -106,11 +106,23 @@ bpe_loop:
     mv a1, s0
     jal count_pairs # f(buffer ptr, buffer len)
 
-
-    jal ra, find_most_frequent_pairs
+    jal ra, find_most_frequent_pairs # f()
 
     li t0, 2
     blt a2, t0, bpe_done
+
+    mv s6, a0
+    mv s7, a1
+
+    mv a0, s3
+    mv a1, s0
+    mv a2, s6
+    mv a3, s7
+    mv a4, s2
+
+    jal ra, replace_most_frequent_pair # f(buffer ptr, length, byte 1, btye 2, replacing byte)
+
+    mv s0, a0
 
 bpe_done:
 
@@ -491,6 +503,83 @@ find_most_frequent_pairs_done:
     mv a0, t3
     mv a1, t4
     mv a2, t2
+
+    ret
+
+replace_most_frequent_pair:
+
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1; 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    sd s4, 0(sp)
+
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    mv s3, a3
+    mv s4, a4
+
+    # read and write idx
+    li t0, 0
+    li t1, 0
+
+replace_most_frequent_pair_loop:
+
+    bge t0, s1, replace_most_frequent_pair_done
+
+    addi t2, s1, -1
+    bge t0, t2, copy_last_byte
+
+    add t3, s0, t0
+    lb t4, 0(t3)
+    lb t5, 1(t3)
+
+    bne t4, s2, replace_most_frequent_pair_no_match
+    bne t5, s3, replace_most_frequent_pair_no_match
+
+    add t6, s0, t1
+    sb s4, 0(t6)
+
+    addi t1, t1, 1
+    addi t0, t0, 2
+
+    j replace_most_frequent_pair_loop
+
+replace_most_frequent_pair_no_match:
+
+    add t6, s0, t1
+    sb t4, 0(t6)
+    
+    addi t1, t1, 1
+    addi t0 t0, 1
+
+    j replace_most_frequent_pair_loop
+
+copy_last_byte:
+
+    add t3, s0, t0
+    lb t4, 0(t3)
+
+    add t6, s0, t1
+    sb t4, 0(t6)
+
+    addi t1, t1, 1
+    addi t0, t0, 1
+
+replace_most_frequent_pair_done:
+
+    mv a0, t1
+
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    ld s4, 0(sp)
+    addi sp, sp, 48
 
     ret
 
