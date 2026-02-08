@@ -1,6 +1,6 @@
 .data
     user_input:
-        .ascii "aaaabbbbbbbbc" # 256 char max zodat max count nog in 1 byte past
+        .ascii "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" # 256 char max zodat max count nog in 1 byte past
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -431,8 +431,6 @@ print_char:
     sd ra, 8(sp)
     sd a0, 0(sp)
 
-    sb a0, 0(sp)
-
     li a7, 64
     li a0, 1
     mv a1, sp
@@ -491,11 +489,11 @@ print_arrow:
 
 print_num:
 
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
-    sd s2, 0(sp)
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
 
     mv s0, a0
 
@@ -509,7 +507,7 @@ print_num:
 
 convert_number:
 
-    mv s1, sp
+    addi s1, sp, 16
     li s2, 0
 
 convert_number_loop:
@@ -543,11 +541,11 @@ print_digits:
 
 print_num_done:
 
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    ld s2, 0(sp)
-    addi sp, sp, 32
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
 
     ret
 
