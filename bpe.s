@@ -1,8 +1,6 @@
 .data
     user_input:
-        .ascii "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" # 256 char max zodat max count nog in 1 byte past
-    user_input_end:
-    user_input_length = user_input_end - user_input
+        .zero 256
 
     newline:
         .asciz "\n"
@@ -120,6 +118,15 @@
     placeholder_iterations_msg_end:
     placeholder_iterations_msg_length = placeholder_iterations_msg_end - placeholder_iterations_msg
 
+    placeholder_prompt_msg:
+        .asciz "Enter text to compress (max 256 chars); "
+    placeholder_prompt_msg_end:
+    placeholder_prompt_msg_length = placeholder_prompt_msg_end - placeholder_prompt_msg
+
+    placeholder_err_too_long_msg:
+        .asciz "Error: input too long, max 256 char"
+    placeholder_err_too_long_msg_end:
+    placeholder_err_too_long_mss_length = placeholder_err_too_long_msg_end - placeholder_err_too_long_msg
 
     work_buffer:
         .zero 256 # idem aan max user input
@@ -137,13 +144,52 @@ _start:
 
     jal ra, print_spacer
 
+    la a1, placeholder_prompt_msg
+    li a2, placeholder_prompt_msg_length
+    jal ra, print_string
+
+    la a0, user_input
+    li a1, 256
+    jal ra, read_input # f(buffer ptr, max bytes)
+
+    beqz a0, exit_program
+
+    li t0, 256
+    bne a0, t0, input_ok
+
+    la t1, user_input
+    addi t2, t1, 255
+    lb t3, 0(t2)
+    li t4, '\n'
+    beq t3, t4, input_ok
+
+    j input_too_long
+
+input_ok:
+
+    la t0, user_input
+    add t1, t0, a0
+    addi t1, t1, -1
+    lb t2, 0(t1)
+    li t3, '\n'
+    bne t2, t3, skip_newline_removal
+    addi a0, a0, -1
+
+skip_newline_removal:
+
+    mv s10, a0
+
+    beqz s10, exit_program
+
+    jal ra, print_newline
+
     # print user input
     la a1, placeholder_og_msg
     li a2, placeholder_og_msg_length
     jal ra, print_string
 
     la a1, user_input
-    li a2, user_input_length
+    mv a2, s10
     jal ra, print_string
 
     jal ra, print_newline
@@ -152,7 +198,7 @@ _start:
     # copy user input to bufffer and print
     la a0, user_input
     la a1, work_buffer
-    li a2, user_input_length
+    mv a2, s10
     jal ra, copy_string
 
     la a1, placeholder_buff_msg
@@ -160,14 +206,14 @@ _start:
     jal ra, print_string
 
     la a1, work_buffer
-    li a2, user_input_length
+    mv a2, s10
     jal ra, print_string
 
     jal ra, print_newline
 
 
     # init state
-    li s0, user_input_length
+    mv s0, s10
     li s1, 0
     li s2, 0x7B
     la s3, work_buffer
@@ -211,10 +257,49 @@ _start:
 
     jal ra, print_spacer
 
-    # exit
+exit_program:
+
     li a7, 93
     li a0, 0
     ecall
+
+input_too_long:
+
+    la a1, placeholder_err_too_long_msg
+    li a2, placeholder_err_too_long_mss_length
+    jal ra, print_string
+
+    jal ra, print_newline
+
+    li a7, 93
+    li a0, 1
+    ecall
+
+read_input:
+
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd a0, 0(sp)
+
+    mv a2, a1
+    ld a1, 0(sp)
+    li a0, 0
+    li a7, 63
+    ecall
+    blt a0, zero, read_error
+
+    ld ra, 8(sp)
+    addi sp, sp, 16
+
+    ret
+
+read_error:
+
+    li a0, 0
+    ld ra, 8(sp)
+    addi sp, sp, 16
+
+    ret
 
 bpe:
 
@@ -933,7 +1018,7 @@ print_statistics:
     sd s4, 0(sp)
 
     mv s2, s0
-    li s3, user_input_length
+    mv s3, s10
     mv s4, s1
 
     mv t0, s4
