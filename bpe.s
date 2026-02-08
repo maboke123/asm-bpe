@@ -92,7 +92,7 @@ _start:
     # init state
     li s0, user_input_length
     li s1, 0
-    li s2, 0x78
+    li s2, 0x7B
     la s3, work_buffer
     la s4, translation_table
     li s5, 4
