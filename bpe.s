@@ -1,6 +1,6 @@
 .data
     user_input:
-        .asciz "aaaabbbbbbbb"
+        .asciz "aaaabbbbbbbbc"
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -111,6 +111,8 @@ _start:
     la s3, work_buffer
     la s4, translation_table
     li s5, 4
+
+    addi s0, s0, -1
 
     jal ra, print_spacer
 
