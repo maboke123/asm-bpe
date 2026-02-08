@@ -21,6 +21,11 @@
     arrow_str:
         .asciz "->"
 
+    spacer_str:
+        .asciz "=================================="
+    spacer_end:
+    spacer_length = spacer_end - spacer_str
+
     placeholder_og_msg:
         .asciz "Original message: "
     placeholder_og_msg_end:
@@ -45,6 +50,16 @@
         .asciz "Translation table: "
     placeholder_trans_table_msg_end:
     placeholder_trans_table_msg_length = placeholder_trans_table_msg_end - placeholder_trans_table_msg
+
+    placeholder_iteration_msg:
+        .asciz "Iteration: "
+    placeholder_iteration_msg_end:
+    placeholder_iteration_msg_length = placeholder_iteration_msg_end - placeholder_iteration_msg
+
+    placeholder_count_msg:
+        .asciz "Replacing: "
+    placeholder_count_msg_end:
+    placeholder_count_msg_length = placeholder_count_msg_end - placeholder_count_msg
 
     work_buffer:
         .zero 64
@@ -95,21 +110,14 @@ _start:
     li s2, 0x7B
     la s3, work_buffer
     la s4, translation_table
-    li s5, 1
+    li s5, 4
+
+    jal ra, print_spacer
 
     # bpe loop
     jal ra, bpe
 
-
-    # print pair freq table
-    la a1, placeholder_freq_table_msg
-    li a2, placeholder_freq_table_msg_length
-    jal ra, print_string
-
-    jal ra, print_newline
-    
-    jal ra, print_pair_frequency_table
-
+    jal ra, print_spacer
 
     # print translation table
     la a1, placeholder_trans_table_msg
@@ -120,6 +128,7 @@ _start:
     
     jal ra, print_translation_table
 
+    jal ra, print_spacer
 
     # print output
     la a1, placeholder_new_msg
@@ -149,9 +158,33 @@ bpe_loop:
 
     beqz s5, bpe_done
 
+
+    # print iteration
+    la a1, placeholder_iteration_msg
+    li a2, placeholder_iteration_msg_length
+    jal ra, print_string
+
+    mv a0, s1
+    jal ra, print_num
+
+    jal ra, print_newline
+
+
+    # count pairs
     mv a0, s3
     mv a1, s0
     jal count_pairs # f(buffer ptr, buffer len)
+
+
+    # print pair freq table
+    la a1, placeholder_freq_table_msg
+    li a2, placeholder_freq_table_msg_length
+    jal ra, print_string
+
+    jal ra, print_newline
+    
+    jal ra, print_pair_frequency_table
+
 
     jal ra, find_most_frequent_pairs # f()
 
@@ -160,6 +193,38 @@ bpe_loop:
 
     mv s6, a0
     mv s7, a1
+    mv s8, a2
+
+
+    # print count + replacement
+    la a1, placeholder_count_msg
+    li a2, placeholder_count_msg_length
+    jal ra, print_string
+
+    mv a0, s6
+    jal ra, print_char
+
+    jal ra, print_comma
+    jal ra, print_space
+
+    mv a0, s7
+    jal ra, print_char
+
+    jal ra, print_comma
+    jal ra, print_space
+
+    mv a0, s8
+    jal ra, print_num
+
+    jal ra, print_space
+    jal ra, print_arrow
+    jal ra, print_space
+
+    mv a0, s2
+    jal ra, print_char
+
+    jal ra, print_newline
+
 
     mv a0, s3
     mv a1, s0
@@ -181,6 +246,8 @@ bpe_loop:
     addi s2, s2, 1
     addi s5, s5, -1
     addi s4, s4, 3
+
+    jal ra, print_spacer
 
     li t0, 0x100
     blt s2, t0, bpe_loop
@@ -333,6 +400,23 @@ print_newline:
     li a2, newline_length
 
     jal ra, print_string
+
+    ld ra, 0(sp)
+    addi sp, sp, 8
+
+    ret
+
+print_spacer:
+
+    addi sp, sp, -8
+    sd ra, 0(sp)
+
+    la a1, spacer_str
+    li a2, spacer_length
+
+    jal ra, print_string
+
+    jal ra, print_newline
 
     ld ra, 0(sp)
     addi sp, sp, 8
