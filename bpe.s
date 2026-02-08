@@ -1,6 +1,6 @@
 .data
     user_input:
-        .asciz "aaaabbbbbbbbc"
+        .ascii "aaaabbbbbbbbc" # 256 char max zodat max count nog in 1 byte past
     user_input_end:
     user_input_length = user_input_end - user_input
 
@@ -62,13 +62,13 @@
     placeholder_count_msg_length = placeholder_count_msg_end - placeholder_count_msg
 
     work_buffer:
-        .zero 64
+        .zero 256 # idem aan max user input
 
     translation_table:
-        .zero 48
+        .zero 399 # max aantal iter = 0xFF - 0x7B + 1 = 133
 
     pair_frequency_table:
-        .zero 768
+        .zero 768 # 256 * 3
 
 .text
 .global _start
@@ -110,9 +110,9 @@ _start:
     li s2, 0x7B
     la s3, work_buffer
     la s4, translation_table
-    li s5, 4
+    li s5, 133
 
-    addi s0, s0, -1
+    # addi s0, s0, -1
 
     jal ra, print_spacer
 
